@@ -1,6 +1,6 @@
 /*
  * Check box plugin
- * @version 0.2.2
+ * @version 0.2.4
  * @author Denis Sobolev
  */
 
@@ -20,18 +20,23 @@ if ( typeof rcube_mail_ui  === 'function' ) {
 }
 
 function rcmail_selectmenu() {
-  if (!rcmail_ui.popups.selectmenu)
-    rcmail_ui.selectmenu();
+  if (typeof rcmail_ui != 'undefined') {
+    if (!rcmail_ui.popups.selectmenu)
+      rcmail_ui.selectmenu();
 
-  var obj = rcmail_ui.popups['selectmenu'].obj
-  show = obj.is(':visible') ? false : true;
-  if(show) {
-    $('#selectmenu').mouseleave(function() { return rcmail.command('plugin.chbox.selectmenu')});
-  } else {
-    $('#selectmenu').unbind('mouseleave');
+    var obj = rcmail_ui.popups['selectmenu'].obj
+    show = obj.is(':visible') ? false : true;
+    if(show) {
+      $('#selectmenu').mouseleave(function() { return rcmail.command('plugin.chbox.selectmenu')});
+    } else {
+      $('#selectmenu').unbind('mouseleave');
+    }
+    rcmail_ui.show_popupmenu('selectmenu');
+  }else {
+    UI.show_popup('selectmenu');
+    var obj = $('#selectmenu');
+    obj.mouseleave(function() { return  obj.hide();});
   }
-
-  rcmail_ui.show_popupmenu('selectmenu');
   return false;
 }
 
@@ -63,7 +68,10 @@ if (window.rcmail) {
         for (var uid, i=0, len=selection.length; i<len; i++) {
             uid = selection[i];
             var select = document.getElementById('rcmselect'+uid);
-            if (select) select.checked = true;
+            if (select) {
+				select.checked = true;
+				//rcmail.message_list.select_childs(uid);
+			}
         }
       });
     }
@@ -72,7 +80,7 @@ if (window.rcmail) {
   rcmail.addEventListener('listupdate','chbox_menu');
   rcmail.addEventListener('insertrow', function(evt) {
     var row = evt.row
-    if ((found = $.inArray('chbox', rcmail.env.coltypes)) >= 0) {
+    if (found = (typeof(rcmail.env.coltypes.chbox) != "undefined" || $.inArray('chbox', rcmail.env.coltypes) >= 0)) {
       rcmail.set_env('chbox_col', found);
     }
     // set eventhandler to checkbox selection
@@ -83,7 +91,7 @@ if (window.rcmail) {
       row.select._row = row.obj;
       row.select.onclick = function(e) {
         // don't include the non-selected checkbox in this
-        rcmail.message_list.select_row(row.uid, CONTROL_KEY, false);
+        rcmail.message_list.select_row(row.uid, CONTROL_KEY, true);
         $("#selectcount").html(rcmail.message_list.selection.length);
       };
     }
@@ -93,6 +101,7 @@ if (window.rcmail) {
 
 $(document).ready(function(){
   chbox_menu();
-  var li = '<li><input type="checkbox" name="list_col[]" value="chbox" id="cols_chbox" /><label for="cols_chbox">'+rcmail.get_label('chbox.chbox')+'</label></li>';
+  var li = '<label><input type="checkbox" name="list_col[]" value="chbox" id="cols_chbox" /><span>'+rcmail.get_label('chbox.chbox')+'</span></label>';
   $("#listmenu fieldset ul input#cols_threads").parent().after(li);
+  $("#listoptions fieldset ul.proplist:first li:first-child").after('<li>'+li+'</li>');
 });
